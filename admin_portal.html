@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>行政作業中心 - 光祐長照</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style> 
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f9ff; color: #0f172a; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+    </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDkC6kfqpmEeMKIvWIqftounTSH_NPp25M",
+            authDomain: "assessmentsystem-9e2ec.firebaseapp.com",
+            projectId: "assessmentsystem-9e2ec",
+            storageBucket: "assessmentsystem-9e2ec.firebasestorage.app",
+            messagingSenderId: "455151254122",
+            appId: "1:455151254122:web:45787cfce4469bff90e813",
+            measurementId: "G-201C6BE86Z"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        window.login = login;
+        window.logout = logout;
+        window.goTo = goTo;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const docSnap = await getDoc(doc(db, "employees", user.uid));
+                if (docSnap.exists()) {
+                    const empData = docSnap.data();
+                    sessionStorage.setItem('kuangyou_user', JSON.stringify({ uid: user.uid, name: empData.name, role: empData.role }));
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('portal-section').classList.remove('hidden');
+                    document.getElementById('user-name').innerText = empData.name;
+                } else {
+                    alert("找不到員工資料"); await signOut(auth);
+                }
+            } else {
+                sessionStorage.removeItem('kuangyou_user');
+                document.getElementById('login-section').classList.remove('hidden');
+                document.getElementById('portal-section').classList.add('hidden');
+            }
+        });
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const pwd = document.getElementById('password').value;
+            if(!email || !pwd) return alert("請輸入帳號密碼");
+            const finalEmail = email.includes('@') ? email : `${email}@kuangyou.internal`;
+            try { await signInWithEmailAndPassword(auth, finalEmail, pwd); } catch (e) { alert("登入失敗：" + e.message); }
+        }
+
+        async function logout() { if(confirm("確定登出？")) await signOut(auth); }
+        function goTo(url) { window.location.href = url; }
+    </script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-slate-50">
+
+    <div id="login-section" class="w-full max-w-sm p-8 bg-white rounded-2xl shadow-xl z-10 border border-slate-100">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-black text-slate-800 mb-1">行政作業登入</h1>
+            <p class="text-slate-400 text-sm">光祐長照 · 內部系統</p>
+        </div>
+        <div class="space-y-4">
+            <input type="text" id="email" placeholder="帳號 / 員工編號" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 outline-none focus:border-blue-500">
+            <input type="password" id="password" placeholder="密碼" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 outline-none focus:border-blue-500">
+            <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg transition">登入</button>
+        </div>
+    </div>
+
+    <div id="portal-section" class="hidden w-full max-w-lg z-10">
+        <div class="flex justify-between items-end mb-6 px-2">
+            <div>
+                <h1 class="text-2xl font-black text-slate-800">早安，<span id="user-name" class="text-blue-600">---</span></h1>
+                <p class="text-slate-500 text-sm">請選擇要執行的作業：</p>
+            </div>
+            <button onclick="logout()" class="text-xs text-slate-400 hover:text-slate-600 border px-3 py-1 rounded-full">登出</button>
+        </div>
+
+        <div class="grid gap-4">
+            
+            <div onclick="goTo('income_management.html')" class="card-hover bg-white p-6 rounded-2xl cursor-pointer border-l-8 border-indigo-500 shadow-sm flex items-center gap-4 transition hover:bg-indigo-50">
+                <div class="bg-indigo-100 text-indigo-600 w-16 h-16 rounded-full flex items-center justify-center text-3xl">💰</div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">收款與派單</h2>
+                    <p class="text-sm text-slate-500">列印收費單、登記現金收款</p>
+                </div>
+            </div>
+
+            <div onclick="goTo('expense_log.html')" class="card-hover bg-white p-6 rounded-2xl cursor-pointer border-l-8 border-emerald-500 shadow-sm flex items-center gap-4 transition hover:bg-emerald-50">
+                <div class="bg-emerald-100 text-emerald-600 w-16 h-16 rounded-full flex items-center justify-center text-3xl">📝</div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">零用金流水帳</h2>
+                    <p class="text-sm text-slate-500">登記日常支出 (便當、加油)</p>
+                </div>
+            </div>
+
+            <div onclick="goTo('bill_reminder.html')" class="card-hover bg-white p-6 rounded-2xl cursor-pointer border-l-8 border-yellow-500 shadow-sm flex items-center gap-4 transition hover:bg-yellow-50">
+                <div class="bg-yellow-100 text-yellow-600 w-16 h-16 rounded-full flex items-center justify-center text-3xl">🔔</div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">帳單/請款提報</h2>
+                    <p class="text-sm text-slate-500">上傳待繳帳單，提醒老闆匯款</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-8 text-center text-xs text-slate-300">
+            Kuang-You Internal System v2.1
+        </div>
+    </div>
+
+</body>
+</html>
